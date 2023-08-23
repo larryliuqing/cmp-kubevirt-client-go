@@ -110,7 +110,7 @@ func (c *FakeMigrationPolicies) UpdateStatus(ctx context.Context, migrationPolic
 // Delete takes name of the migrationPolicy and deletes it. Returns an error if one occurs.
 func (c *FakeMigrationPolicies) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(migrationpoliciesResource, name), &v1alpha1.MigrationPolicy{})
+		Invokes(testing.NewRootDeleteActionWithOptions(migrationpoliciesResource, name, opts), &v1alpha1.MigrationPolicy{})
 	return err
 }
 

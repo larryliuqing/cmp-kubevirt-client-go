@@ -117,7 +117,7 @@ func (c *FakeVirtualMachineSnapshotContents) UpdateStatus(ctx context.Context, v
 // Delete takes name of the virtualMachineSnapshotContent and deletes it. Returns an error if one occurs.
 func (c *FakeVirtualMachineSnapshotContents) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(virtualmachinesnapshotcontentsResource, c.ns, name), &v1alpha1.VirtualMachineSnapshotContent{})
+		Invokes(testing.NewDeleteActionWithOptions(virtualmachinesnapshotcontentsResource, c.ns, name, opts), &v1alpha1.VirtualMachineSnapshotContent{})
 
 	return err
 }

@@ -105,7 +105,7 @@ func (c *FakeVolumeCloneSources) Update(ctx context.Context, volumeCloneSource *
 // Delete takes name of the volumeCloneSource and deletes it. Returns an error if one occurs.
 func (c *FakeVolumeCloneSources) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(volumeclonesourcesResource, c.ns, name), &v1beta1.VolumeCloneSource{})
+		Invokes(testing.NewDeleteActionWithOptions(volumeclonesourcesResource, c.ns, name, opts), &v1beta1.VolumeCloneSource{})
 
 	return err
 }

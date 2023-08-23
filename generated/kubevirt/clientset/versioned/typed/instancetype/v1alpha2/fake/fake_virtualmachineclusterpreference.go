@@ -99,7 +99,7 @@ func (c *FakeVirtualMachineClusterPreferences) Update(ctx context.Context, virtu
 // Delete takes name of the virtualMachineClusterPreference and deletes it. Returns an error if one occurs.
 func (c *FakeVirtualMachineClusterPreferences) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(virtualmachineclusterpreferencesResource, name), &v1alpha2.VirtualMachineClusterPreference{})
+		Invokes(testing.NewRootDeleteActionWithOptions(virtualmachineclusterpreferencesResource, name, opts), &v1alpha2.VirtualMachineClusterPreference{})
 	return err
 }
 

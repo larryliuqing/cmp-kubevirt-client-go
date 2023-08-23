@@ -117,7 +117,7 @@ func (c *FakeVolumeUploadSources) UpdateStatus(ctx context.Context, volumeUpload
 // Delete takes name of the volumeUploadSource and deletes it. Returns an error if one occurs.
 func (c *FakeVolumeUploadSources) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(volumeuploadsourcesResource, c.ns, name), &v1beta1.VolumeUploadSource{})
+		Invokes(testing.NewDeleteActionWithOptions(volumeuploadsourcesResource, c.ns, name, opts), &v1beta1.VolumeUploadSource{})
 
 	return err
 }

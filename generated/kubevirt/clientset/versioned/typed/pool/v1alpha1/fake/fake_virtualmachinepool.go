@@ -117,7 +117,7 @@ func (c *FakeVirtualMachinePools) UpdateStatus(ctx context.Context, virtualMachi
 // Delete takes name of the virtualMachinePool and deletes it. Returns an error if one occurs.
 func (c *FakeVirtualMachinePools) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(virtualmachinepoolsResource, c.ns, name), &v1alpha1.VirtualMachinePool{})
+		Invokes(testing.NewDeleteActionWithOptions(virtualmachinepoolsResource, c.ns, name, opts), &v1alpha1.VirtualMachinePool{})
 
 	return err
 }

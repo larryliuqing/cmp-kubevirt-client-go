@@ -117,7 +117,7 @@ func (c *FakeVirtualMachineExports) UpdateStatus(ctx context.Context, virtualMac
 // Delete takes name of the virtualMachineExport and deletes it. Returns an error if one occurs.
 func (c *FakeVirtualMachineExports) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(virtualmachineexportsResource, c.ns, name), &v1alpha1.VirtualMachineExport{})
+		Invokes(testing.NewDeleteActionWithOptions(virtualmachineexportsResource, c.ns, name, opts), &v1alpha1.VirtualMachineExport{})
 
 	return err
 }

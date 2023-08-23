@@ -105,7 +105,7 @@ func (c *FakeVirtualMachineInstancetypes) Update(ctx context.Context, virtualMac
 // Delete takes name of the virtualMachineInstancetype and deletes it. Returns an error if one occurs.
 func (c *FakeVirtualMachineInstancetypes) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(virtualmachineinstancetypesResource, c.ns, name), &v1alpha1.VirtualMachineInstancetype{})
+		Invokes(testing.NewDeleteActionWithOptions(virtualmachineinstancetypesResource, c.ns, name, opts), &v1alpha1.VirtualMachineInstancetype{})
 
 	return err
 }

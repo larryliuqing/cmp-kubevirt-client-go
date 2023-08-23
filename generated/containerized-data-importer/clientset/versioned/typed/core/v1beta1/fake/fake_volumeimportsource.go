@@ -117,7 +117,7 @@ func (c *FakeVolumeImportSources) UpdateStatus(ctx context.Context, volumeImport
 // Delete takes name of the volumeImportSource and deletes it. Returns an error if one occurs.
 func (c *FakeVolumeImportSources) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(volumeimportsourcesResource, c.ns, name), &v1beta1.VolumeImportSource{})
+		Invokes(testing.NewDeleteActionWithOptions(volumeimportsourcesResource, c.ns, name, opts), &v1beta1.VolumeImportSource{})
 
 	return err
 }

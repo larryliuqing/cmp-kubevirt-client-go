@@ -20,11 +20,13 @@ package versioned
 
 import (
 	"fmt"
+	"net/http"
 
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
 	clonev1alpha1 "kubevirt.io/client-go/generated/kubevirt/clientset/versioned/typed/clone/v1alpha1"
+	kubevirtv1 "kubevirt.io/client-go/generated/kubevirt/clientset/versioned/typed/core/v1"
 	exportv1alpha1 "kubevirt.io/client-go/generated/kubevirt/clientset/versioned/typed/export/v1alpha1"
 	instancetypev1alpha1 "kubevirt.io/client-go/generated/kubevirt/clientset/versioned/typed/instancetype/v1alpha1"
 	instancetypev1alpha2 "kubevirt.io/client-go/generated/kubevirt/clientset/versioned/typed/instancetype/v1alpha2"
@@ -37,6 +39,7 @@ import (
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
 	CloneV1alpha1() clonev1alpha1.CloneV1alpha1Interface
+	KubevirtV1() kubevirtv1.KubevirtV1Interface
 	ExportV1alpha1() exportv1alpha1.ExportV1alpha1Interface
 	InstancetypeV1alpha1() instancetypev1alpha1.InstancetypeV1alpha1Interface
 	InstancetypeV1alpha2() instancetypev1alpha2.InstancetypeV1alpha2Interface
@@ -46,11 +49,11 @@ type Interface interface {
 	SnapshotV1alpha1() snapshotv1alpha1.SnapshotV1alpha1Interface
 }
 
-// Clientset contains the clients for groups. Each group has exactly one
-// version included in a Clientset.
+// Clientset contains the clients for groups.
 type Clientset struct {
 	*discovery.DiscoveryClient
 	cloneV1alpha1        *clonev1alpha1.CloneV1alpha1Client
+	kubevirtV1           *kubevirtv1.KubevirtV1Client
 	exportV1alpha1       *exportv1alpha1.ExportV1alpha1Client
 	instancetypeV1alpha1 *instancetypev1alpha1.InstancetypeV1alpha1Client
 	instancetypeV1alpha2 *instancetypev1alpha2.InstancetypeV1alpha2Client
@@ -63,6 +66,11 @@ type Clientset struct {
 // CloneV1alpha1 retrieves the CloneV1alpha1Client
 func (c *Clientset) CloneV1alpha1() clonev1alpha1.CloneV1alpha1Interface {
 	return c.cloneV1alpha1
+}
+
+// KubevirtV1 retrieves the KubevirtV1Client
+func (c *Clientset) KubevirtV1() kubevirtv1.KubevirtV1Interface {
+	return c.kubevirtV1
 }
 
 // ExportV1alpha1 retrieves the ExportV1alpha1Client
@@ -111,7 +119,29 @@ func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 // NewForConfig creates a new Clientset for the given config.
 // If config's RateLimiter is not set and QPS and Burst are acceptable,
 // NewForConfig will generate a rate-limiter in configShallowCopy.
+// NewForConfig is equivalent to NewForConfigAndClient(c, httpClient),
+// where httpClient was generated with rest.HTTPClientFor(c).
 func NewForConfig(c *rest.Config) (*Clientset, error) {
+	configShallowCopy := *c
+
+	if configShallowCopy.UserAgent == "" {
+		configShallowCopy.UserAgent = rest.DefaultKubernetesUserAgent()
+	}
+
+	// share the transport between all clients
+	httpClient, err := rest.HTTPClientFor(&configShallowCopy)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewForConfigAndClient(&configShallowCopy, httpClient)
+}
+
+// NewForConfigAndClient creates a new Clientset for the given config and http client.
+// Note the http client provided takes precedence over the configured transport values.
+// If config's RateLimiter is not set and QPS and Burst are acceptable,
+// NewForConfigAndClient will generate a rate-limiter in configShallowCopy.
+func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset, error) {
 	configShallowCopy := *c
 	if configShallowCopy.RateLimiter == nil && configShallowCopy.QPS > 0 {
 		if configShallowCopy.Burst <= 0 {
@@ -119,42 +149,47 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 		}
 		configShallowCopy.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(configShallowCopy.QPS, configShallowCopy.Burst)
 	}
+
 	var cs Clientset
 	var err error
-	cs.cloneV1alpha1, err = clonev1alpha1.NewForConfig(&configShallowCopy)
+	cs.cloneV1alpha1, err = clonev1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
-	cs.exportV1alpha1, err = exportv1alpha1.NewForConfig(&configShallowCopy)
+	cs.kubevirtV1, err = kubevirtv1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
-	cs.instancetypeV1alpha1, err = instancetypev1alpha1.NewForConfig(&configShallowCopy)
+	cs.exportV1alpha1, err = exportv1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
-	cs.instancetypeV1alpha2, err = instancetypev1alpha2.NewForConfig(&configShallowCopy)
+	cs.instancetypeV1alpha1, err = instancetypev1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
-	cs.instancetypeV1beta1, err = instancetypev1beta1.NewForConfig(&configShallowCopy)
+	cs.instancetypeV1alpha2, err = instancetypev1alpha2.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
-	cs.migrationsV1alpha1, err = migrationsv1alpha1.NewForConfig(&configShallowCopy)
+	cs.instancetypeV1beta1, err = instancetypev1beta1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
-	cs.poolV1alpha1, err = poolv1alpha1.NewForConfig(&configShallowCopy)
+	cs.migrationsV1alpha1, err = migrationsv1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
-	cs.snapshotV1alpha1, err = snapshotv1alpha1.NewForConfig(&configShallowCopy)
+	cs.poolV1alpha1, err = poolv1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
+	if err != nil {
+		return nil, err
+	}
+	cs.snapshotV1alpha1, err = snapshotv1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
 
-	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfig(&configShallowCopy)
+	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -164,24 +199,18 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // NewForConfigOrDie creates a new Clientset for the given config and
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
-	var cs Clientset
-	cs.cloneV1alpha1 = clonev1alpha1.NewForConfigOrDie(c)
-	cs.exportV1alpha1 = exportv1alpha1.NewForConfigOrDie(c)
-	cs.instancetypeV1alpha1 = instancetypev1alpha1.NewForConfigOrDie(c)
-	cs.instancetypeV1alpha2 = instancetypev1alpha2.NewForConfigOrDie(c)
-	cs.instancetypeV1beta1 = instancetypev1beta1.NewForConfigOrDie(c)
-	cs.migrationsV1alpha1 = migrationsv1alpha1.NewForConfigOrDie(c)
-	cs.poolV1alpha1 = poolv1alpha1.NewForConfigOrDie(c)
-	cs.snapshotV1alpha1 = snapshotv1alpha1.NewForConfigOrDie(c)
-
-	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
-	return &cs
+	cs, err := NewForConfig(c)
+	if err != nil {
+		panic(err)
+	}
+	return cs
 }
 
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
 	cs.cloneV1alpha1 = clonev1alpha1.New(c)
+	cs.kubevirtV1 = kubevirtv1.New(c)
 	cs.exportV1alpha1 = exportv1alpha1.New(c)
 	cs.instancetypeV1alpha1 = instancetypev1alpha1.New(c)
 	cs.instancetypeV1alpha2 = instancetypev1alpha2.New(c)

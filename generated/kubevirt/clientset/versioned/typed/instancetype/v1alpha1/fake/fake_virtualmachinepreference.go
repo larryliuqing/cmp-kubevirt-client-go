@@ -105,7 +105,7 @@ func (c *FakeVirtualMachinePreferences) Update(ctx context.Context, virtualMachi
 // Delete takes name of the virtualMachinePreference and deletes it. Returns an error if one occurs.
 func (c *FakeVirtualMachinePreferences) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(virtualmachinepreferencesResource, c.ns, name), &v1alpha1.VirtualMachinePreference{})
+		Invokes(testing.NewDeleteActionWithOptions(virtualmachinepreferencesResource, c.ns, name, opts), &v1alpha1.VirtualMachinePreference{})
 
 	return err
 }
